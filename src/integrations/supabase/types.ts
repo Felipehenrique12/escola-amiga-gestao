@@ -107,6 +107,167 @@ export type Database = {
         }
         Relationships: []
       }
+      eventos: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          dia_inteiro: boolean | null
+          fim: string | null
+          id: string
+          inicio: string
+          tipo: string | null
+          titulo: string
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          dia_inteiro?: boolean | null
+          fim?: string | null
+          id?: string
+          inicio: string
+          tipo?: string | null
+          titulo: string
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          dia_inteiro?: boolean | null
+          fim?: string | null
+          id?: string
+          inicio?: string
+          tipo?: string | null
+          titulo?: string
+        }
+        Relationships: []
+      }
+      matriculas: {
+        Row: {
+          aluno_id: string
+          ano_letivo: number
+          ativo: boolean | null
+          id: string
+          turma_id: string
+        }
+        Insert: {
+          aluno_id: string
+          ano_letivo: number
+          ativo?: boolean | null
+          id?: string
+          turma_id: string
+        }
+        Update: {
+          aluno_id?: string
+          ano_letivo?: number
+          ativo?: boolean | null
+          id?: string
+          turma_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matriculas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matriculas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notas: {
+        Row: {
+          aluno_id: string
+          ano_letivo: number
+          disciplina_id: string
+          id: string
+          u1: number | null
+          u2: number | null
+          u3: number | null
+          u4: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          aluno_id: string
+          ano_letivo: number
+          disciplina_id: string
+          id?: string
+          u1?: number | null
+          u2?: number | null
+          u3?: number | null
+          u4?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          aluno_id?: string
+          ano_letivo?: number
+          disciplina_id?: string
+          id?: string
+          u1?: number | null
+          u2?: number | null
+          u3?: number | null
+          u4?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_disciplina_id_fkey"
+            columns: ["disciplina_id"]
+            isOneToOne: false
+            referencedRelation: "disciplinas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pagamentos: {
+        Row: {
+          aluno_id: string
+          ano_letivo: number
+          id: string
+          mes: number
+          obs: string | null
+          pago: boolean
+          pago_em: string | null
+        }
+        Insert: {
+          aluno_id: string
+          ano_letivo: number
+          id?: string
+          mes: number
+          obs?: string | null
+          pago?: boolean
+          pago_em?: string | null
+        }
+        Update: {
+          aluno_id?: string
+          ano_letivo?: number
+          id?: string
+          mes?: number
+          obs?: string | null
+          pago?: boolean
+          pago_em?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamentos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       turmas: {
         Row: {
           ano_letivo: number
