@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, XCircle, Calendar } from 'lucide-react';
+import { CheckCircle, XCircle } from 'lucide-react';
 
 interface Student {
   id: string;
@@ -29,12 +29,38 @@ interface StudentPaymentStatus {
   payments: Payment[];
   totalPaid: number;
   totalPending: number;
+  status: { label: string; color: string };
 }
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
+
+// Função para calcular status considerando o vencimento no dia 10
+const getStudentPaymentStatus = (payments: Payment[]) => {
+  const today = new Date();
+  const currentMonth = today.getMonth() + 1; // Janeiro = 1
+  const currentDay = today.getDate();
+
+  // Se ainda não chegou dia 10, o mês atual não conta como vencido
+  const lastDueMonth = currentDay < 10 ? currentMonth - 1 : currentMonth;
+
+  // Filtra apenas os meses já vencidos
+  const monthsToCheck = payments.filter(p => p.mes <= lastDueMonth);
+
+  if (monthsToCheck.length === 0) {
+    return { label: "Pagamento em Falta", color: "red" };
+  }
+
+  // Todos pagos até o último vencimento
+  const allPaid = monthsToCheck.every(p => p.pago);
+  if (allPaid) {
+    return { label: "Em dia", color: "green" };
+  }
+
+  return { label: "Pagamento em Falta", color: "red" };
+};
 
 export const PaymentManagement = () => {
   const [studentsPayments, setStudentsPayments] = useState<StudentPaymentStatus[]>([]);
@@ -50,7 +76,6 @@ export const PaymentManagement = () => {
     try {
       const currentYear = new Date().getFullYear();
       
-      // Get all students
       const { data: students, error: studentsError } = await supabase
         .from('alunos')
         .select('id, nome_completo')
@@ -58,7 +83,6 @@ export const PaymentManagement = () => {
 
       if (studentsError) throw studentsError;
 
-      // Get all payments for current year
       const { data: payments, error: paymentsError } = await supabase
         .from('pagamentos')
         .select('*')
@@ -66,18 +90,15 @@ export const PaymentManagement = () => {
 
       if (paymentsError) throw paymentsError;
 
-      // Process data
-      const studentsWithPayments = students.map(student => {
+      const studentsWithPayments: StudentPaymentStatus[] = students.map(student => {
         const studentPayments = payments.filter(p => p.aluno_id === student.id);
         
-        // Ensure all 12 months exist
-        const allMonthsPayments = [];
+        const allMonthsPayments: Payment[] = [];
         for (let month = 1; month <= 12; month++) {
           const existingPayment = studentPayments.find(p => p.mes === month);
           if (existingPayment) {
             allMonthsPayments.push(existingPayment);
           } else {
-            // Create placeholder for missing month
             allMonthsPayments.push({
               id: `temp-${student.id}-${month}`,
               aluno_id: student.id,
@@ -89,13 +110,15 @@ export const PaymentManagement = () => {
         }
 
         const totalPaid = allMonthsPayments.filter(p => p.pago).length;
-        const totalPending = 12 - totalPaid;
+        const totalPending = allMonthsPayments.filter(p => !p.pago).length;
+        const status = getStudentPaymentStatus(allMonthsPayments);
 
         return {
           student,
           payments: allMonthsPayments,
           totalPaid,
           totalPending,
+          status,
         };
       });
 
@@ -114,7 +137,6 @@ export const PaymentManagement = () => {
   const handlePaymentToggle = async (payment: Payment, paid: boolean) => {
     try {
       if (payment.id.startsWith('temp-')) {
-        // Create new payment record
         const { error } = await supabase
           .from('pagamentos')
           .insert([{
@@ -127,7 +149,6 @@ export const PaymentManagement = () => {
 
         if (error) throw error;
       } else {
-        // Update existing payment
         const { error } = await supabase
           .from('pagamentos')
           .update({
@@ -151,26 +172,6 @@ export const PaymentManagement = () => {
         description: "Não foi possível atualizar o status do pagamento.",
         variant: "destructive",
       });
-    }
-  };
-
-  const getPaymentStatusIcon = (totalPaid: number, totalPending: number) => {
-    if (totalPending === 0) {
-      return <CheckCircle className="h-5 w-5 text-green-600" />;
-    } else if (totalPaid === 0) {
-      return <XCircle className="h-5 w-5 text-red-600" />;
-    } else {
-      return <Calendar className="h-5 w-5 text-yellow-600" />;
-    }
-  };
-
-  const getStatusBadge = (totalPaid: number, totalPending: number) => {
-    if (totalPending === 0) {
-      return <Badge variant="secondary" className="bg-green-100 text-green-800">Em dia</Badge>;
-    } else if (totalPaid === 0) {
-      return <Badge variant="destructive">Inadimplente</Badge>;
-    } else {
-      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Parcial</Badge>;
     }
   };
 
@@ -209,20 +210,35 @@ export const PaymentManagement = () => {
               {studentsPayments.map((studentData) => (
                 <TableRow key={studentData.student.id}>
                   <TableCell className="flex items-center space-x-2">
-                    {getPaymentStatusIcon(studentData.totalPaid, studentData.totalPending)}
+                    {studentData.status.color === "green" ? (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-red-600" />
+                    )}
                     <span className="font-medium">{studentData.student.nome_completo}</span>
                   </TableCell>
                   <TableCell>
-                    {getStatusBadge(studentData.totalPaid, studentData.totalPending)}
+                    <Badge
+                      variant="secondary"
+                      className={
+                        studentData.status.color === "green"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }
+                    >
+                      {studentData.status.label}
+                    </Badge>
                   </TableCell>
                   <TableCell>{studentData.totalPaid}/12</TableCell>
                   <TableCell>{studentData.totalPending}</TableCell>
                   <TableCell>
-                    <Dialog open={isDialogOpen && selectedStudent?.student.id === studentData.student.id} 
-                           onOpenChange={(open) => {
-                             setIsDialogOpen(open);
-                             if (!open) setSelectedStudent(null);
-                           }}>
+                    <Dialog
+                      open={isDialogOpen && selectedStudent?.student.id === studentData.student.id}
+                      onOpenChange={(open) => {
+                        setIsDialogOpen(open);
+                        if (!open) setSelectedStudent(null);
+                      }}
+                    >
                       <DialogTrigger asChild>
                         <Button
                           variant="outline"
@@ -249,7 +265,7 @@ export const PaymentManagement = () => {
                             >
                               <Checkbox
                                 checked={payment.pago}
-                                onCheckedChange={(checked) => 
+                                onCheckedChange={(checked) =>
                                   handlePaymentToggle(payment, checked as boolean)
                                 }
                               />
