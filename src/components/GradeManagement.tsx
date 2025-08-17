@@ -112,9 +112,9 @@ export const GradeManagement = () => {
 
   const handleGradeChange = (disciplinaId: string, unit: 'u1' | 'u2' | 'u3' | 'u4', value: string) => {
     const numValue = value === '' ? undefined : parseFloat(value);
-    
-    setGrades(prev => prev.map(grade => 
-      grade.disciplina_id === disciplinaId 
+
+    setGrades(prev => prev.map(grade =>
+      grade.disciplina_id === disciplinaId
         ? { ...grade, [unit]: numValue }
         : grade
     ));
@@ -141,9 +141,9 @@ export const GradeManagement = () => {
           if (error) throw error;
         } else {
           // Insert new grade (only if at least one unit has a value)
-          const hasValue = grade.u1 !== undefined || grade.u2 !== undefined || 
-                          grade.u3 !== undefined || grade.u4 !== undefined;
-          
+          const hasValue = grade.u1 !== undefined || grade.u2 !== undefined ||
+            grade.u3 !== undefined || grade.u4 !== undefined;
+
           if (hasValue) {
             const { error } = await supabase
               .from('notas')
@@ -240,9 +240,8 @@ export const GradeManagement = () => {
                 {filteredStudents.map((student) => (
                   <div
                     key={student.id}
-                    className={`p-2 cursor-pointer hover:bg-accent ${
-                      selectedStudent === student.id ? 'bg-accent' : ''
-                    }`}
+                    className={`p-2 cursor-pointer hover:bg-accent ${selectedStudent === student.id ? 'bg-accent' : ''
+                      }`}
                     onClick={() => setSelectedStudent(student.id)}
                   >
                     {student.nome_completo}
@@ -337,7 +336,14 @@ export const GradeManagement = () => {
                             className="w-20"
                           />
                         </TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell
+                          className={`font-medium ${Number(calculateAverage(grade)) >= 7
+                              ? 'text-green-600'
+                              : Number(calculateAverage(grade)) < 7 && calculateAverage(grade) !== '-'
+                                ? 'text-red-600'
+                                : ''
+                            }`}
+                        >
                           {calculateAverage(grade)}
                         </TableCell>
                       </TableRow>
