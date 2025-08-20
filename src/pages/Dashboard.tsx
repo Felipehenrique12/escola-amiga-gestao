@@ -27,14 +27,17 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const [activeSection, setActiveSection] = useState<ActiveSection>('overview');
 
+  // ======================
   // Contadores e loading
+  // ======================
   const [studentsCount, setStudentsCount] = useState<number>(0);
   const [loadingStudents, setLoadingStudents] = useState<boolean>(true);
 
   const [disciplinasCount, setSubjectsCount] = useState<number>(0);
   const [loadingDisciplinas, setSubjectsLoading] = useState<boolean>(true);
 
-  const [pagamentosEmDia, setPagamentosEmDia] = useState<number>(0);
+  const [pagamentosEmDia, setPagamentosEmDia] = useState<number>(0); // percentual
+  const [alunosEmDiaCount, setAlunosEmDiaCount] = useState<number>(0); // quantidade real
   const [loadingPagamentos, setLoadingPagamentos] = useState<boolean>(true);
 
   const [dark, setDark] = useState(() => {
@@ -57,7 +60,6 @@ const Dashboard = () => {
   // ======================
   // Funções de fetch
   // ======================
-
   const fetchStudentsCount = async () => {
     setLoadingStudents(true);
     try {
@@ -113,8 +115,10 @@ const Dashboard = () => {
         if (ultimoMesVencido === 0 || pagos.length === 0 || pagos.every(p => p.pago)) emDia++;
       });
 
+      setAlunosEmDiaCount(emDia);
       setPagamentosEmDia(alunos?.length ? Math.round((emDia / alunos.length) * 100) : 0);
     } catch {
+      setAlunosEmDiaCount(0);
       setPagamentosEmDia(0);
     } finally {
       setLoadingPagamentos(false);
@@ -130,7 +134,7 @@ const Dashboard = () => {
   };
 
   // ======================
-  // Efeito para atualizar ao entrar na visão geral
+  // Atualiza visão geral ao entrar
   // ======================
   useEffect(() => {
     if (activeSection === 'overview') {
@@ -208,7 +212,7 @@ const Dashboard = () => {
                   {loadingPagamentos ? '...' : `${pagamentosEmDia}%`}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {loadingStudents ? '—' : `${Math.round(studentsCount * 0.89)} de ${studentsCount} Alunos em dia com pagamento`}
+                  {loadingPagamentos ? '—' : `${alunosEmDiaCount} de ${studentsCount} Alunos em dia com pagamento`}
                 </p>
               </CardContent>
             </Card>
