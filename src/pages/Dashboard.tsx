@@ -216,6 +216,19 @@ const Dashboard = () => {
                 </p>
               </CardContent>
             </Card>
+
+            {/* Próximos Eventos */}
+         
+            <Card className="col-span-1 md:col-span-2 lg:col-span-3 w-full">
+              <CardHeader>
+                <CardTitle>Próximos Eventos</CardTitle>
+                <CardDescription>Confira os eventos da escola ou atividades agendadas.</CardDescription>
+              </CardHeader>
+              <CardContent>
+              <EventCalendar isDashboard initialView="list" />
+              </CardContent>
+            </Card>
+
           </div>
         );
     }
