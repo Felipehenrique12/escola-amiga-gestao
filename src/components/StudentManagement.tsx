@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Search } from 'lucide-react';
 
 interface Student {
   id: string;
@@ -26,6 +26,8 @@ export const StudentManagement = () => {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [formData, setFormData] = useState({
     nome_completo: '',
     data_nascimento: '',
@@ -63,16 +65,16 @@ export const StudentManagement = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       if (editingStudent) {
         const { error } = await supabase
           .from('alunos')
           .update(formData)
           .eq('id', editingStudent.id);
-        
+
         if (error) throw error;
-        
+
         toast({
           title: "Aluno atualizado",
           description: "Os dados do aluno foram atualizados com sucesso.",
@@ -81,15 +83,15 @@ export const StudentManagement = () => {
         const { error } = await supabase
           .from('alunos')
           .insert([formData]);
-        
+
         if (error) throw error;
-        
+
         toast({
           title: "Aluno cadastrado",
           description: "O aluno foi cadastrado com sucesso.",
         });
       }
-      
+
       fetchStudents();
       setIsDialogOpen(false);
       resetForm();
@@ -117,22 +119,39 @@ export const StudentManagement = () => {
     setIsDialogOpen(true);
   };
 
+  const fillFormData = (student: Student) => ({
+    nome_completo: student.nome_completo,
+    data_nascimento: student.data_nascimento,
+    nome_pai: student.nome_pai || '',
+    nome_mae: student.nome_mae || '',
+    endereco: student.endereco || '',
+    telefone1: student.telefone1 || '',
+    telefone2: student.telefone2 || '',
+    alergia: student.alergia || '',
+  });
+
+  const handleView = (student: Student) => {
+    setFormData(fillFormData(student));
+    setViewingStudent(student);
+    
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este aluno?')) return;
-    
+
     try {
       const { error } = await supabase
         .from('alunos')
         .delete()
         .eq('id', id);
-      
+
       if (error) throw error;
-      
+
       toast({
         title: "Aluno excluído",
         description: "O aluno foi excluído com sucesso.",
       });
-      
+
       fetchStudents();
     } catch (error) {
       toast({
@@ -213,7 +232,7 @@ export const StudentManagement = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="nome_pai">Nome do Pai</Label>
@@ -232,7 +251,7 @@ export const StudentManagement = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="endereco">Endereço</Label>
                 <Input
@@ -241,7 +260,7 @@ export const StudentManagement = () => {
                   onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="telefone1">Telefone 1</Label>
@@ -260,7 +279,7 @@ export const StudentManagement = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="alergia">Alergia</Label>
                 <Input
@@ -269,7 +288,7 @@ export const StudentManagement = () => {
                   onChange={(e) => setFormData({ ...formData, alergia: e.target.value })}
                 />
               </div>
-              
+
               <div className="flex justify-end space-x-2">
                 <Button
                   type="button"
@@ -282,6 +301,94 @@ export const StudentManagement = () => {
                   {editingStudent ? 'Atualizar' : 'Cadastrar'}
                 </Button>
               </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!viewingStudent} onOpenChange={() => setViewingStudent(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Detalhes do aluno</DialogTitle>
+              <DialogDescription>Informações do aluno</DialogDescription>
+            </DialogHeader>
+            <form className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome_completo">Nome Completo *</Label>
+                  <Input
+                    id="nome_completo"
+                    value={formData.nome_completo}
+                    readOnly />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="data_nascimento">Data de Nascimento *</Label>
+                  <Input
+                    id="data_nascimento"
+                    type="date"
+                    value={formData.data_nascimento}
+                    readOnly />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome_pai">Nome do Pai</Label>
+                  <Input
+                    id="nome_pai"
+                    value={formData.nome_pai}
+                    readOnly />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nome_mae">Nome da Mãe</Label>
+                  <Input
+                    id="nome_mae"
+                    value={formData.nome_mae}
+                    readOnly />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="endereco">Endereço</Label>
+                <Input
+                  id="endereco"
+                  value={formData.endereco}
+                  readOnly />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="telefone1">Telefone 1</Label>
+                  <Input
+                    id="telefone1"
+                    value={formData.telefone1}
+                    readOnly />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="telefone2">Telefone 2</Label>
+                  <Input
+                    id="telefone2"
+                    value={formData.telefone2}
+                    readOnly />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="alergia">Alergia</Label>
+                <Input
+
+                  value={formData.alergia}
+                  readOnly />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setViewingStudent(null)}
+                >
+                  Voltar
+                </Button>
+                
+                </div>
             </form>
           </DialogContent>
         </Dialog>
@@ -316,13 +423,26 @@ export const StudentManagement = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => handleEdit(student)}
+                        title="Editar Aluno"
+                        aria-label="Editar Aluno"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => handleView(student)}
+                        title="Detalhes do aluno"
+                        aria-label="Detalhes do aluno"
+                      >
+                        <Search className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleDelete(student.id)}
+                        title="Excluir Aluno"
+                        aria-label="Excluir Aluno"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
