@@ -86,11 +86,11 @@ export const EventCalendar = ({ readOnly = false, initialView = 'list', isDashbo
       const eventData = {
         ...formData,
         inicio: formData.dia_inteiro
-          ? new Date(formData.inicio + 'T00:00:00').toISOString()
+          ? new Date(`${formData.inicio}T00:00:00`).toISOString()
           : new Date(formData.inicio).toISOString(),
         fim: formData.fim
           ? (formData.dia_inteiro
-            ? new Date(formData.fim + 'T23:59:59').toISOString()
+            ? new Date(`${formData.fim}T23:59:59`).toISOString()
             : new Date(formData.fim).toISOString())
           : null,
       };
@@ -225,11 +225,22 @@ export const EventCalendar = ({ readOnly = false, initialView = 'list', isDashbo
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const currentDayEvents = events.filter(event => {
+      /* const currentDayEvents = events.filter(event => {
         const eventDate = new Date(event.inicio);
         return eventDate.getDate() === day &&
           eventDate.getMonth() === month &&
-          eventDate.getFullYear() === year;
+          eventDate.getFullYear() === year; */
+      const currentDayEvents = events.filter(event => {
+        const eventStart = new Date(event.inicio);
+        const eventEnd = event.fim ? new Date(event.fim) : eventStart;
+        const currentDateCheck = new Date(year, month, day);
+
+        // Normaliza horário para comparar apenas por data
+        eventStart.setHours(0, 0, 0, 0);
+        eventEnd.setHours(23, 59, 59, 999);
+        currentDateCheck.setHours(12, 0, 0, 0);
+
+        return currentDateCheck >= eventStart && currentDateCheck <= eventEnd;
       });
 
       days.push(
@@ -283,20 +294,7 @@ export const EventCalendar = ({ readOnly = false, initialView = 'list', isDashbo
           )}
         </div>
         <div className="flex gap-2">
-          {/*  <Button
-            variant={viewMode === 'calendar' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('calendar')}
-          >
-            <Calendar className="h-4 w-4 mr-2" /> Calendário
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('list')}
-          >
-            <List className="h-4 w-4 mr-2" /> Lista
-          </Button> */}
+        
 
           {!isDashboard && (
             <>
@@ -425,6 +423,7 @@ export const EventCalendar = ({ readOnly = false, initialView = 'list', isDashbo
         </Card>
       ) : (
         <Card>
+
           <CardHeader>
             <CardTitle>Lista de Eventos</CardTitle>
             <CardDescription>{events.length} evento(s) cadastrado(s)</CardDescription>
